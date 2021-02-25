@@ -28,7 +28,7 @@ def main():
     pipeline.add(streammux)
 
     for camera in cameras_list:
-        source = create_element_or_error("nvarguscamerasrc", "source-" + str(camera['source']))
+        source = create_element_or_error("nvarguscamerasrc", "source-" + str(camera['name']))
         source.set_property('sensor-id', camera['source'])
         source.set_property('bufapi-version', True)
         pipeline.add(source)
