@@ -14,46 +14,39 @@ from common.create_element_or_error import create_element_or_error
 
 def main():
 
+    cameras_list = [
+        {"source": 0, "name": "Camera 1",},
+        {"source": 1, "name": "Camera 2"},
+    ]
+    
     GObject.threads_init()
     Gst.init(None)
 
     pipeline = Gst.Pipeline()
+
     if not pipeline:
         print("Unable to create Pipeline")
-        return False
+        exit(0)
 
     streammux = create_element_or_error("nvstreammux", "Stream-muxer")
     pipeline.add(streammux)
 
-    source = create_element_or_error("nvarguscamerasrc", "camera-source-1")
-    source.set_property('sensor-id', 0)
-    source.set_property('bufapi-version', True)
-    pipeline.add(source)
+    for camera in cameras_list:
+        source = create_element_or_error("nvarguscamerasrc", "source-" + str(camera['source']))
+        source.set_property('sensor-id', camera['source'])
+        source.set_property('bufapi-version', True)
+        pipeline.add(source)
 
-    sinkpad1 = streammux.get_request_pad('sink_0') 
-    if not sinkpad1:
-        print("Unable to create sink pad bin")
-        exit(0)
-    srcpad1 = source.get_static_pad("src")
-    if not srcpad1:
-        print("Unable to create src pad bin \n")
-        exit(0)
-    srcpad1.link(sinkpad1)
+        sinkpad = streammux.get_request_pad('sink_' + str(camera['source']))
+        srcpad = source.get_static_pad("src")
 
-    source2 = create_element_or_error("nvarguscamerasrc", "camera-source-2")
-    source2.set_property('sensor-id', 1)
-    source2.set_property('bufapi-version', True)
-    pipeline.add(source2)
-
-    sinkpad2 = streammux.get_request_pad('sink_1') 
-    if not sinkpad2:
-        print("Unable to create sink pad bin")
-        exit(0)
-    srcpad2 = source2.get_static_pad("src")
-    if not srcpad2:
-        print("Unable to create src pad bin \n")
-        exit(0)
-    srcpad2.link(sinkpad2)
+        if not sinkpad:
+            print("Unable to create source sink pad")
+            exit(0)
+        if not srcpad:
+            print("Unable to create source src pad")
+            exit(0)
+        srcpad.link(sinkpad)
 
     tiler = create_element_or_error("nvmultistreamtiler", "nvtiler")
     nvvidconv = create_element_or_error("nvvideoconvert", "converter-1")
