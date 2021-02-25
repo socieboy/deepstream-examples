@@ -23,7 +23,7 @@ def main():
     
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
     caps = create_element_or_error("capsfilter", "source-caps")
-    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM),width=1920,height=1080,framerate=30/1,format=NV12"))
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM),width=1640,height=1232,framerate=30/1,format=NV12"))
 
     streammux = create_element_or_error("nvstreammux", "Stream-muxer")
     pgie = create_element_or_error("nvinfer", "primary-inference")
@@ -41,14 +41,20 @@ def main():
     source.set_property('sensor-id', 0)
     source.set_property('bufapi-version', True)
     
-    streammux.set_property('width', 1920)
-    streammux.set_property('height', 1080)
+    streammux.set_property('live-source', 1)
+    streammux.set_property('width', 1640)
+    streammux.set_property('height', 1232)
+    streammux.set_property('num-surfaces-per-frame', 1)
+    streammux.set_property('nvbuf-memory-type', 4)
     streammux.set_property('batch-size', 1)
+    streammux.set_property('batched-push-timeout', 4000000)
 
     pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
 
-    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_mot_klt.so')
+    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_nvdcf.so')
     tracker.set_property('enable-batch-process', 1)
+    tracker.set_property('tracker-width', 640)
+    tracker.set_property('tracker-height', 480)
 
 
     # Add Elemements to Pipielin
