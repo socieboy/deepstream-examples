@@ -3,13 +3,9 @@
 #
 import argparse
 import sys
-sys.path.append('../')
-import math
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
-from common.is_aarch_64 import is_aarch64
-from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
 def main():
@@ -97,9 +93,6 @@ def main():
     
     # Create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()
-    bus = pipeline.get_bus()
-    bus.add_signal_watch()
-    bus.connect ("message", bus_call, loop)
 
     # Start play back and listen to events
     print("Starting pipeline")
