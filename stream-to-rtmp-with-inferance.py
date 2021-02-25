@@ -1,17 +1,16 @@
 #
-# Publish video to Ant Server
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
 #
-import argparse
-import sys
-sys.path.append('./')
-
-import gi
-gi.require_version('Gst', '1.0')
+# Publish stream to RTMP server with inferance.
+#
+import sys, gi
 from gi.repository import GObject, Gst
-from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 import pyds
+
+gi.require_version('Gst', '1.0')
 
 PGIE_CLASS_ID_VEHICLE = 0
 PGIE_CLASS_ID_BICYCLE = 1

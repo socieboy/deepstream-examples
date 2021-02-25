@@ -1,3 +1,11 @@
+#
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
+#
+# Stream camera usign webRTC, Gstreamer still doesn't have fully support for this.
+#
+# IN-PROGRESS
+#
 import random
 import ssl
 import websockets

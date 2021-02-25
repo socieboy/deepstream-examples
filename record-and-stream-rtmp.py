@@ -1,4 +1,7 @@
 #
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
+#
 # The folowing example publish the video to ant server and record the video locally using a quees
 #
 import argparse

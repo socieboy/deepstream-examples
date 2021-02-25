@@ -1,21 +1,22 @@
 #
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
 #
-# Display the Image on the Screen using the EGL Sink of Nvidia
+# Applying the nvinfer plugin with display.
 #
-#
-import sys
-import gi
-gi.require_version('Gst', '1.0')
+import sys, gi
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
+from common.object_detection import osd_sink_pad_buffer_probe
+
+gi.require_version('Gst', '1.0')
 
 def main():
     
     # Standard GStreamer initialization
     GObject.threads_init()
     Gst.init(None)
-
 
     # Create Pipeline Element
     pipeline = Gst.Pipeline()

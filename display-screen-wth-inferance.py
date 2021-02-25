@@ -1,19 +1,16 @@
 #
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
 #
-# Display the Image on the Screen with Object Detections
+# Display camera on screen using "nvoverlaysink" and apply inferance.
 #
-#
-import argparse
-import sys
-sys.path.append('../')
-
-import gi
-gi.require_version('Gst', '1.0')
+import sys, gi
 from gi.repository import GObject, Gst
-from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.object_detection import osd_sink_pad_buffer_probe
 from common.create_element_or_error import create_element_or_error
+
+gi.require_version('Gst', '1.0')
 
 def main():
     
@@ -33,7 +30,6 @@ def main():
     convertor = Gst.ElementFactory.make("nvvideoconvert", "convertor-1")
     nvosd = Gst.ElementFactory.make("nvdsosd", "onscreendisplay")
     convertor2 = Gst.ElementFactory.make("nvvidconv", "converter-2")
-    transform = Gst.ElementFactory.make("nvegltransform", "nvegl-transform")
     sink = Gst.ElementFactory.make("nvoverlaysink", "egl-overlay")
 
     # Set Element Properties
@@ -61,8 +57,6 @@ def main():
     pipeline.add(nvosd)
     pipeline.add(convertor2)
     pipeline.add(sink)
-    # if is_aarch64():
-        # pipeline.add(transform)
 
     sinkpad = streammux.get_request_pad("sink_0")
     if not sinkpad:
@@ -75,11 +69,6 @@ def main():
     streammux.link(pgie)
     pgie.link(convertor)
     convertor.link(nvosd)
-    # nvosd.link(convertor2)
-    # if is_aarch64():
-        # nvosd.link(transform)
-        # transform.link(sink)
-    # else:
     nvosd.link(sink)
     
 

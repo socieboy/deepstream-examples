@@ -1,17 +1,19 @@
 #
-# Publish video to Ant Server
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
 #
-import argparse
-import sys
-sys.path.append('../')
-
-import gi
-gi.require_version('Gst', '1.0')
+# Stream a MKV file to RTMP
+#
+# gst-launch-1.0 -v filesrc location=../streamit-virtual-edge-appliance/storage/tests/concourse/1.MKV ! matroskademux ! h264parse ! flvmux ! rtmpsink location=rtmp://media.streamit.live/LiveApp/streaming-test
+#
+import sys gi
 from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
-# gst-launch-1.0 -v filesrc location=../streamit-virtual-edge-appliance/storage/tests/concourse/1.MKV ! matroskademux ! h264parse ! flvmux ! rtmpsink location=rtmp://media.streamit.live/LiveApp/streaming-test
+
+gi.require_version('Gst', '1.0')
+
 def main():
     
     # Standard GStreamer initialization

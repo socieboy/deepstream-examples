@@ -1,20 +1,15 @@
 #
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
 #
-# Stream over RTSP the camera with Object Detection
+# Create a RTSP server and apply inferance.
 #
-#
-import argparse
-import sys
-sys.path.append('../')
-
-import gi
-gi.require_version('Gst', '1.0')
-gi.require_version('GstRtspServer', '1.0')
-from gi.repository import GObject, Gst, GstRtspServer
-from common.is_aarch_64 import is_aarch64
-from common.bus_call import bus_call
+import sys, gi
+from gi.repository import GObject, Gst
 from common.object_detection import osd_sink_pad_buffer_probe
 from common.create_element_or_error import create_element_or_error
+
+gi.require_version('Gst', '1.0')
 
 def main():
     
@@ -116,9 +111,6 @@ def main():
     
     print("\n *** DeepStream: Launched RTSP Streaming at rtsp://localhost:%d/streaming ***\n\n" % rtsp_port_num)
 
-    # Lets add probe to get informed of the meta data generated, we add probe to
-    # the sink pad of the osd element, since by that time, the buffer would have
-    # had got all the metadata.
     print('Create OSD Sink Pad')
     osdsinkpad = nvosd.get_static_pad("sink")
     if not osdsinkpad:

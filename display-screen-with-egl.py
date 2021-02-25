@@ -1,7 +1,10 @@
 #
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
 #
-# Display the Image on the Screen using the EGL Sink of Nvidia
+# Display camera on screen using "nveglglessink"
 #
+# gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! nvvidconv ! nvegltransform ! nveglglessink
 #
 import argparse
 import sys
@@ -27,7 +30,6 @@ def main():
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline")
     
-    # gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! nvvidconv ! nvegltransform ! nveglglessink
     # Create Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
     convertor = create_element_or_error("nvvidconv", "converter-1")
@@ -74,6 +76,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
-gst-launch-1.0 nvarguscamerasrc bufapi-version=true sensor-id=0 ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=30/1,format=NV12" ! m.sink_0 nvstreammux name=m batch-size=1 width=1280 height=720 ! nvinfer config-file-path=/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt ! nvtracker tracker-width=640 tracker-height=480 ll-lib-file=/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_mot_klt.so enable-batch-process=1 ! nvvideoconvert ! "video/x-raw(memory:NVMM),format=RGBA" ! nvmultistreamtiler ! nvdsosd ! nvvideoconvert ! nvegltransform ! nveglglessink

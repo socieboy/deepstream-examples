@@ -1,21 +1,17 @@
 #
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
 #
-# Display the Image on the Screen using the EGL Sink of Nvidia
+# Example to keep a record of detected objects.
 #
-#
-import argparse
-import sys
-sys.path.append('../')
-
-import gi
-gi.require_version('Gst', '1.0')
+import sys, gi
 import time
 from gi.repository import GObject, Gst
-from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
-from common.object_detection import osd_sink_pad_buffer_probe
 import pyds
+
+gi.require_version('Gst', '1.0')
 
 detectedObjectsIds = []
 detectedObjects = []
@@ -114,8 +110,6 @@ def main():
     convertor = create_element_or_error("nvvideoconvert", "convertor-1")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     convertor2 = create_element_or_error("nvvideoconvert", "converter-2")
-    # caps = create_element_or_error("capsfilter", "source-caps-definition")
-    # caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, framerate=30/1, format=(string)NV12"))
     transform = create_element_or_error("nvegltransform", "nvegl-transform")
     sink = create_element_or_error("nveglglessink", "egl-overlay")
 

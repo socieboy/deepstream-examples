@@ -1,16 +1,15 @@
 #
-# Publish video to Ant Server
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
 #
-import argparse
-import sys
-sys.path.append('../')
-
-import gi
-gi.require_version('Gst', '1.0')
+# Publish stream to RTMP server
+#
+import sys, gi
 from gi.repository import GObject, Gst
-from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
+
+gi.require_version('Gst', '1.0')
 
 def main():
     
@@ -26,7 +25,9 @@ def main():
     
     # Create GST Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
-    
+    caps = create_element_or_error("capsfilter", "source-caps-source")
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM),width=1920,height=1080,framerate=30/1,format=NV12"))
+
     encoder = create_element_or_error("nvv4l2h264enc", "encoder")
     parser = create_element_or_error("h264parse", "parser")
     muxer = create_element_or_error("flvmux", "muxer")
@@ -39,6 +40,7 @@ def main():
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
     pipeline.add(source)
+    pipeline.add(caps)
     pipeline.add(encoder)
     pipeline.add(parser)
     pipeline.add(muxer)
@@ -46,7 +48,8 @@ def main():
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
-    source.link(encoder)
+    source.link(caps)
+    caps.link(encoder)
     encoder.link(parser)
     parser.link(muxer)
     muxer.link(sink)

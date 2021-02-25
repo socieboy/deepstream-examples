@@ -1,7 +1,10 @@
 #
+# Author: Frank Sepulveda
+# Email: socieboy@gmail.com
 #
-# Display the MKV File on the Screen using the EGL Sink of Nvidia
+# Display a MKV file on Screen
 #
+# gst-launch-1.0 -v filesrc location=1.MKV ! matroskademux ! h264parse ! nvoverlaysink
 #
 import argparse
 import sys
@@ -27,7 +30,7 @@ def main():
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline")
     
-    # gst-launch-1.0 -v filesrc location=1.MKV ! matroskademux ! h264parse ! nvoverlaysink
+    # 
     # ______________________________
     # Create Elements
     source = create_element_or_error("filesink", "camera-source")
