@@ -11,7 +11,6 @@ from common.create_element_or_error import create_element_or_error
 from common.object_detection import osd_sink_pad_buffer_probe
 
 def main():
-    print('Tracker Example')
     
     GObject.threads_init()
     Gst.init(None)
@@ -50,7 +49,6 @@ def main():
 
     tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_mot_klt.so')
     tracker.set_property('enable-batch-process', 1)
-    tracker.set_property('ll-config-file', '/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/tracker_config.yml')
 
 
     # Add Elemements to Pipielin
