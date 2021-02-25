@@ -3,18 +3,12 @@
 # Display the Image on the Screen using the EGL Sink of Nvidia
 #
 #
-import argparse
 import sys
-sys.path.append('../')
-
 import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
-from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
-from common.object_detection import osd_sink_pad_buffer_probe
-import pyds
 
 def main():
     
@@ -50,7 +44,6 @@ def main():
     streammux.set_property('batched-push-timeout', 4000000)
 
     pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
-    # convertor.set_property('flip-method', 2)
 
 
     # Add Elemements to Pipielin
