@@ -42,8 +42,8 @@ def main():
     source.set_property('bufapi-version', True)
     
     streammux.set_property('live-source', 1)
-    streammux.set_property('width', 1640)
-    streammux.set_property('height', 1232)
+    streammux.set_property('width', 1280)
+    streammux.set_property('height', 720)
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('nvbuf-memory-type', 4)
     streammux.set_property('batch-size', 1)
