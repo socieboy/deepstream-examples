@@ -24,14 +24,17 @@ def main():
         print("Unable to create Pipeline")
         exit(0)
 
-    streammux = create_element_or_error("nvstreammux", "Stream-muxer")
+    streammux = create_element_or_error("nvstreammux", "stream-muxer")
     pipeline.add(streammux)
 
     for camera in cameras_list:
-        source = create_element_or_error("nvarguscamerasrc", "source-" + str(camera['name']))
+        source = create_element_or_error("nvarguscamerasrc", "source-" + camera['name'])
         source.set_property('sensor-id', camera['source'])
         source.set_property('bufapi-version', True)
+        caps = create_element_or_error("capsfilter", "source-caps-source-" + camera['name'])
+        caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1,format=NV12"))
         pipeline.add(source)
+        pipeline.add(caps)
 
         sinkpad = streammux.get_request_pad('sink_' + str(camera['source']))
         srcpad = source.get_static_pad("src")
@@ -44,8 +47,12 @@ def main():
             exit(0)
         srcpad.link(sinkpad)
 
+    pgie = create_element_or_error("nvinfer", "primary-inference")
+    tracker = create_element_or_error("nvtracker", "tracker")
+    convertor = create_element_or_error("nvvideoconvert", "converter-1")
     tiler = create_element_or_error("nvmultistreamtiler", "nvtiler")
-    nvvidconv = create_element_or_error("nvvideoconvert", "converter-1")
+    convertor2 = create_element_or_error("nvvideoconvert", "converter-2")
+    nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     transform = create_element_or_error("nvegltransform", "nvegl-transform")
     sink = create_element_or_error("nveglglessink", "nvvideo-renderer")
 
@@ -53,30 +60,44 @@ def main():
     queue2=create_element_or_error("queue","queue2")
     queue3=create_element_or_error("queue","queue3")
     queue4=create_element_or_error("queue","queue4")
+    queue5=create_element_or_error("queue","queue5")
+    queue6=create_element_or_error("queue","queue6")
 
     pipeline.add(queue1)
     pipeline.add(queue2)
     pipeline.add(queue3)
     pipeline.add(queue4)
+    pipeline.add(queue5)
+    pipeline.add(queue6)
 
     # Set Element Properties
     streammux.set_property('live-source', 1)
-    streammux.set_property('width', 1280)
-    streammux.set_property('height', 720)
+    streammux.set_property('width', 1920)
+    streammux.set_property('height', 1080)
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
+    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
+
+    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_nvdcf.so')
+    tracker.set_property('enable-batch-process', 1)
+    tracker.set_property('tracker-width', 640)
+    tracker.set_property('tracker-height', 480)
+
     tiler.set_property("rows", 2)
     tiler.set_property("columns", 2)
-    tiler.set_property("width", 1280)
-    tiler.set_property("height", 720)
+    tiler.set_property("width", 1920)
+    tiler.set_property("height", 1080)
     sink.set_property("qos", 0)
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
+    pipeline.add(pgie)
+    pipeline.add(tracker)
     pipeline.add(tiler)
-    pipeline.add(nvvidconv)
+    pipeline.add(convertor)
+    pipeline.add(nvosd)
     pipeline.add(transform)
     pipeline.add(sink)
 
@@ -84,11 +105,17 @@ def main():
     print("Linking elements in the Pipeline")
 
     streammux.link(queue1)
-    queue1.link(tiler)
-    tiler.link(queue2)
-    queue2.link(nvvidconv)
-    nvvidconv.link(queue3)
-    queue3.link(transform)
+    queue1.link(pgie)
+    pgie.link(queue2)
+    queue2.link(tracker)
+    tracker.link(queue3)
+    queue3.link(tiler)
+    tiler.link(queue4)
+    queue4.link(convertor)
+    convertor.link(queue5)
+    queue5.link(nvosd)
+    nvosd.link(queue6)
+    queue6.link(transform)
     transform.link(sink)
     
     # Create an event loop and feed gstreamer bus mesages to it
