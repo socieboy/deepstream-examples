@@ -1,4 +1,4 @@
-# Deepstream + Gstreamer Examples
+# Deepstream + Gstreamer Jetson Examples
 
 **Author:**\
 Frank Sepulveda\
