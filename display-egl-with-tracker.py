@@ -9,6 +9,7 @@ sys.path.append('../')
 
 import gi
 gi.require_version('Gst', '1.0')
+import time
 from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
@@ -16,7 +17,8 @@ from common.create_element_or_error import create_element_or_error
 from common.object_detection import osd_sink_pad_buffer_probe
 import pyds
 
-detectedObjectsCount = []
+detectedObjectsIds = []
+detectedObjects = []
 
 def sink_pad_buffer_probe(pad,info,u_data):
    
@@ -40,11 +42,19 @@ def sink_pad_buffer_probe(pad,info,u_data):
             
             try:
                 object_meta = pyds.NvDsObjectMeta.cast(list_of_objects.data)
-    #             # https://docs.nvidia.com/metropolis/deepstream/5.0DP/python-api/NvDsMeta/NvDsObjectMeta.html
-                if object_meta.object_id not in detectedObjectsCount:
-                    detectedObjectsCount.append(object_meta.object_id)
-                    print('Detected "' + object_meta.obj_label + '" with ID: ' + str(object_meta.object_id))
+                # https://docs.nvidia.com/metropolis/deepstream/5.0DP/python-api/NvDsMeta/NvDsObjectMeta.html
+                if object_meta.object_id not in detectedObjectsIds:
+                    t = time.localtime()
+                    current_time = time.strftime("%H:%M:%S", t)
 
+                    detectedObjectsIds.append(object_meta.object_id)
+                    detectedObjects.append({
+                        'id' : str(object_meta.object_id),
+                        'label': str(object_meta.obj_label),
+                        'time': current_time,
+                        'confidence': str(object_meta.confidence)
+                    })
+                    
             except StopIteration:
                 break
             # obj_counter[object_meta.class_id] += 1
@@ -56,6 +66,30 @@ def sink_pad_buffer_probe(pad,info,u_data):
             frame_list = frame_list.next
         except StopIteration:
             break
+
+        display_meta=pyds.nvds_acquire_display_meta_from_pool(batch_meta)
+        display_meta.num_labels = 1
+        py_nvosd_text_params = display_meta.text_params[0]
+
+        textDisplay = "DETECTED OBJECTS:\n\n"
+        if len(detectedObjects) > 10:
+            detectedObjectsList = detectedObjects[-10]
+        else:
+            detectedObjectsList = detectedObjects
+            
+        for _object in detectedObjectsList:
+            textDisplay = textDisplay + _object["time"] + ": Detected: \"" + _object["label"] + "\", ID: " + _object["id"] + ", Confidence: " + _object["confidence"] + "\n"
+            print(textDisplay)
+
+        py_nvosd_text_params.display_text = textDisplay
+        py_nvosd_text_params.x_offset = 10
+        py_nvosd_text_params.y_offset = 12
+        py_nvosd_text_params.font_params.font_name = "Serif"
+        py_nvosd_text_params.font_params.font_size = 10
+        py_nvosd_text_params.font_params.font_color.set(1.0, 1.0, 1.0, 1.0)
+        py_nvosd_text_params.set_bg_clr = 1
+        py_nvosd_text_params.text_bg_clr.set(0.0, 0.0, 0.0, 1.0)
+        pyds.nvds_add_display_meta_to_frame(frame_meta, display_meta)
 			
     return Gst.PadProbeReturn.OK
 
@@ -80,6 +114,8 @@ def main():
     convertor = create_element_or_error("nvvideoconvert", "convertor-1")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     convertor2 = create_element_or_error("nvvideoconvert", "converter-2")
+    # caps = create_element_or_error("capsfilter", "source-caps-definition")
+    # caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, framerate=30/1, format=(string)NV12"))
     transform = create_element_or_error("nvegltransform", "nvegl-transform")
     sink = create_element_or_error("nveglglessink", "egl-overlay")
 
@@ -88,9 +124,10 @@ def main():
     source.set_property('bufapi-version', True)
     
     streammux.set_property('live-source', 1)
-    streammux.set_property('width', 1280)
-    streammux.set_property('height', 720)
+    streammux.set_property('width', 1920)
+    streammux.set_property('height', 1080)
     streammux.set_property('num-surfaces-per-frame', 1)
+    streammux.set_property('nvbuf-memory-type', 4)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
@@ -111,6 +148,7 @@ def main():
     pipeline.add(convertor)
     pipeline.add(nvosd)
     pipeline.add(convertor2)
+    # pipeline.add(caps)
     pipeline.add(transform)
     pipeline.add(sink)
 
@@ -126,6 +164,7 @@ def main():
     tracker.link(convertor)
     convertor.link(nvosd)
     nvosd.link(convertor2)
+    # convertor2.link(caps)
     convertor2.link(transform)
     transform.link(sink)
     

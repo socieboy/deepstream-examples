@@ -6,6 +6,7 @@ import sys
 sys.path.append('./')
 
 import gi
+import time
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
@@ -13,76 +14,79 @@ from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 import pyds
 
-PGIE_CLASS_ID_VEHICLE = 0
-PGIE_CLASS_ID_BICYCLE = 1
-PGIE_CLASS_ID_PERSON = 2
-PGIE_CLASS_ID_ROADSIGN = 3
+detectedObjectsIds = []
+detectedObjects = []
 
-object_counter = {
-    PGIE_CLASS_ID_VEHICLE : 0,
-    PGIE_CLASS_ID_PERSON : 0,
-    PGIE_CLASS_ID_BICYCLE : 0,
-    PGIE_CLASS_ID_ROADSIGN : 0
-}
-
-def _sink_pad_buffer_probe(pad, info, u_data):
-    
+def sink_pad_buffer_probe(pad,info,u_data):
+   
     gst_buffer = info.get_buffer()
+
     if not gst_buffer:
-        print("Unable to get GstBuffer")
-        return
+        sys.stderr.write("Unable to get GstBuffer")
 
     batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(gst_buffer))
     frame_list = batch_meta.frame_meta_list
 
-    print(frame_list)
-    # while frame_list is not None:
-    #     try:
-    #         frame_meta = pyds.NvDsFrameMeta.cast(frame_list.data)
-    #     except StopIteration:
-    #         break
+    while frame_list is not None:
+        try:
+            frame_meta = pyds.NvDsFrameMeta.cast(frame_list.data)
+        except StopIteration:
+            break
 
-    #     list_of_objects = frame_meta.obj_meta_list
+        list_of_objects = frame_meta.obj_meta_list
 
-    #     while list_of_objects is not None:
+        while list_of_objects is not None:
             
-    #         try:
-    #             object_meta = pyds.NvDsObjectMeta.cast(list_of_objects.data)
-    #             print(object_meta)
-    #             # https://docs.nvidia.com/metropolis/deepstream/5.0DP/python-api/NvDsMeta/NvDsObjectMeta.html
-    #             # print(object_meta.rect_params.top)
-    #             # print(object_meta.rect_params.left)
-    #             # print(object_meta.rect_params.width)
-    #             # print(object_meta.rect_params.height)
-    #             # print(object_meta.class_id)
-    #             # print(object_meta.obj_label)
-    #             # print(object_meta.object_id)
+            try:
+                object_meta = pyds.NvDsObjectMeta.cast(list_of_objects.data)
+                # https://docs.nvidia.com/metropolis/deepstream/5.0DP/python-api/NvDsMeta/NvDsObjectMeta.html
+                if object_meta.object_id not in detectedObjectsIds:
+                    t = time.localtime()
+                    current_time = time.strftime("%H:%M:%S", t)
 
-    #         except StopIteration:
-    #             break
+                    detectedObjectsIds.append(object_meta.object_id)
+                    detectedObjects.append({
+                        'id' : str(object_meta.object_id),
+                        'label': str(object_meta.obj_label),
+                        'time': current_time,
+                        'confidence': str(object_meta.confidence)
+                    })
+                    
+            except StopIteration:
+                break
+            # obj_counter[object_meta.class_id] += 1
+            try:
+                list_of_objects = list_of_objects.next
+            except StopIteration:
+                break
+        try:
+            frame_list = frame_list.next
+        except StopIteration:
+            break
 
-    #         # object_counter[object_meta.class_id] += 1
+        display_meta=pyds.nvds_acquire_display_meta_from_pool(batch_meta)
+        display_meta.num_labels = 1
+        py_nvosd_text_params = display_meta.text_params[0]
 
-    #         try: 
-    #             list_of_objects = list_of_objects.next
-    #         except StopIteration:
-    #             break
+        textDisplay = "DETECTED OBJECTS:\n\n"
+        if len(detectedObjects) > 10:
+            detectedObjectsList = detectedObjects[-10]
+        else:
+            detectedObjectsList = detectedObjects
+            
+        for _object in detectedObjectsList:
+            textDisplay = textDisplay + _object["time"] + ": Detected: \"" + _object["label"] + "\", ID: " + _object["id"] + ", Confidence: " + _object["confidence"] + "\n"
 
-    #         display_meta=pyds.nvds_acquire_display_meta_from_pool(batch_meta)
-    #         display_meta.num_rects = 1
-    #         py_nvosd_rect_params = display_meta.rect_params[0]
-    #         print('hello')
-    #         # py_nvosd_rect_params.top = object_meta.rect_params.top
-    #         # py_nvosd_rect_params.left = object_meta.rect_params.left
-    #         # py_nvosd_rect_params.width = object_meta.rect_params.width
-    #         # py_nvosd_rect_params.height = object_meta.rect_params.height
-    #         # pyds.nvds_add_display_meta_to_frame(frame_meta, display_meta)
-    #         print('llego')
-    #     try:
-    #         frame_list = frame_list.next
-    #     except StopIteration:
-    #         break
-
+        py_nvosd_text_params.display_text = textDisplay
+        py_nvosd_text_params.x_offset = 10
+        py_nvosd_text_params.y_offset = 12
+        py_nvosd_text_params.font_params.font_name = "Serif"
+        py_nvosd_text_params.font_params.font_size = 10
+        py_nvosd_text_params.font_params.font_color.set(1.0, 1.0, 1.0, 1.0)
+        py_nvosd_text_params.set_bg_clr = 1
+        py_nvosd_text_params.text_bg_clr.set(0.0, 0.0, 0.0, 1.0)
+        pyds.nvds_add_display_meta_to_frame(frame_meta, display_meta)
+			
     return Gst.PadProbeReturn.OK
 
 def main():
@@ -106,7 +110,7 @@ def main():
     tracker = create_element_or_error("nvtracker", "tracker")
     convertor = create_element_or_error("nvvideoconvert", "convertor-1")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
-    convertor2 = create_element_or_error("nvvideoconvert", "convertor-2")
+    convertor2 = create_element_or_error("nvvideoconvert", "converter-2")
     encoder = create_element_or_error("nvv4l2h264enc", "encoder")
     parser = create_element_or_error("h264parse", "parser")
     muxer = create_element_or_error("flvmux", "muxer")
@@ -123,8 +127,9 @@ def main():
     streammux.set_property('width', 1920)
     streammux.set_property('height', 1080)
     streammux.set_property('num-surfaces-per-frame', 1)
-    streammux.set_property('batch-size', 30)
-    streammux.set_property('batched-push-timeout', 25000)
+    streammux.set_property('nvbuf-memory-type', 4)
+    streammux.set_property('batch-size', 1)
+    streammux.set_property('batched-push-timeout', 4000000)
 
     pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
 
@@ -177,7 +182,7 @@ def main():
     if not nvosd_sinkpad:
         sys.stderr.write("Unable to get sink pad of nvosd")
 
-    nvosd_sinkpad.add_probe(Gst.PadProbeType.BUFFER, _sink_pad_buffer_probe, 0)
+    nvosd_sinkpad.add_probe(Gst.PadProbeType.BUFFER, sink_pad_buffer_probe, 0)
 
     # Start play back and listen to events
     print("Starting pipeline")
