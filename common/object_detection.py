@@ -1,7 +1,8 @@
 import gi
-gi.require_version('Gst', '1.0')
 from gi.repository import Gst
 import pyds
+
+gi.require_version('Gst', '1.0')
 
 PGIE_CLASS_ID_VEHICLE = 0
 PGIE_CLASS_ID_BICYCLE = 1
