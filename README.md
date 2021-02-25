@@ -2,9 +2,10 @@
 
 **Author:**\
 Frank Sepulveda\
-frank@streamit.live
+socieboy@gmail.com
 
-This repository contains real using examples for Gstreamer + Nvidia Deepstream plugins.
+This repository contains examples of gstreamer + deepstream pipelines in python.
+Some of the exaples are:
 
 - Display live video on screen using overlaysink
 - Display live video on screen using Nvidia EGL plugin
@@ -17,6 +18,7 @@ This repository contains real using examples for Gstreamer + Nvidia Deepstream p
 - Record mp4 video and split on chunks
 - Threading and Queues, Streaming and Recording in the same time plus read inferance
 - Decode any HTTP Live Source to a Pipeline
+- Multi CSI camera as source
 
 
 Reset Json Clocks
