@@ -5,10 +5,10 @@
 # Playbin Example
 #
 #
-import sys
-import gi
-gi.require_version('Gst', '1.0')
+import sys, gi
 from gi.repository import GObject, Gst
+
+gi.require_version('Gst', '1.0')
 
 def main():
     

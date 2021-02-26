@@ -6,7 +6,7 @@
 #
 # gst-launch-1.0 -v filesrc location=../streamit-virtual-edge-appliance/storage/tests/concourse/1.MKV ! matroskademux ! h264parse ! flvmux ! rtmpsink location=rtmp://media.streamit.live/LiveApp/streaming-test
 #
-import sys gi
+import sys, gi
 from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
