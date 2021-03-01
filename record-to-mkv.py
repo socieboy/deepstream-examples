@@ -7,11 +7,11 @@
 # gst-launch-1.0 nvarguscamerasrc ! nvv4l2h265enc bitrate=8000000 ! h265parse ! filesink location=1280.mp4 -e
 #
 import sys, datetime, gi
+gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
-gi.require_version('Gst', '1.0')
 
 def __location(splitmux, frag):
     print('Creating new video segment')

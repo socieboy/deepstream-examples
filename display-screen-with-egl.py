@@ -7,18 +7,16 @@
 # gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! nvvidconv ! nvegltransform ! nveglglessink
 #
 import sys, gi
+gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
-
-gi.require_version('Gst', '1.0')
 
 def main():
     
     # Standard GStreamer initialization
     GObject.threads_init()
     Gst.init(None)
-
 
     # Create Pipeline Element
     print("Creating Pipeline")
@@ -42,7 +40,6 @@ def main():
     pipeline.add(convertor)
     pipeline.add(sink)
     pipeline.add(transform)
-
 
     # Link the elements together:
     print("Linking elements in the Pipeline")

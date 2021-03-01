@@ -14,11 +14,11 @@
 # The folowing example publish the video to ant server and record the video locally using a quees
 #
 import sys,datetime, gi
+gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
-gi.require_version('Gst', '1.0')
 
 def __location(splitmux, frag):
     print('Creating new video segment')

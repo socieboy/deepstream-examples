@@ -5,12 +5,12 @@
 # Display camera on screen using "nvoverlaysink" and apply inferance.
 #
 import sys, gi
+gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call
 from common.object_detection import osd_sink_pad_buffer_probe
 from common.create_element_or_error import create_element_or_error
 
-gi.require_version('Gst', '1.0')
 
 def main():
     
@@ -43,7 +43,7 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
+    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/samples/configs/deepstream-app/config_infer_primary.txt")
     pgie.set_property('batch-size', 1)
     pgie.set_property('unique-id', 1)
 

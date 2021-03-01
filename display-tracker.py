@@ -5,13 +5,13 @@
 # Tracker on Display
 #
 import sys, gi
+gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.is_aarch_64 import is_aarch64
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 from common.object_detection import osd_sink_pad_buffer_probe
 
-gi.require_version('Gst', '1.0')
 
 
 def main():
@@ -55,7 +55,7 @@ def main():
     #Set properties of tracker
     tracker.set_property('tracker-width', 640)
     tracker.set_property('tracker-height', 384)
-    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_nvdcf.so')
+    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.1/lib/libnvds_nvdcf.so')
     tracker.set_property('gpu-id', 0)
     tracker.set_property('enable-batch-process', 1)
     tracker.set_property('enable-past-frame', 1)

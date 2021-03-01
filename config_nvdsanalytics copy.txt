@@ -1,0 +1,25 @@
+[property]
+enable=1
+config-width=1920
+config-height=1080
+#osd-mode 0: Dont display any lines, rois and text
+#         1: Display only lines, rois and static text i.e. labels
+#         2: Display all info from 1 plus information about counts
+osd-mode=2
+#Set OSD font size that has to be displayed
+display-font-size=12
+
+## Per stream configuration
+[roi-filtering-stream-0]
+enable=1
+roi-LINE1=700;700;700;900;1900;900;1500;700
+inverse-roi=0
+class-id=-0
+
+[line-crossing-stream-1]
+enable=1
+#Label;direction;lc
+#line-crossing-Entry=772;799;819;946;623;952;1061;926
+line-crossing-Entry=936;464;954;183;646;419;1231;420
+#line-crossing-Exit=0;0;0;0;0;0;0;0;0
+class-id=0

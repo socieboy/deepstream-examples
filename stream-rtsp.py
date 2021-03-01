@@ -5,13 +5,12 @@
 # Create a RTSP server
 #
 import sys, gi
+gi.require_version('Gst', '1.0')
+gi.require_version('GstRtspServer', '1.0')
 from gi.repository import GObject, Gst, GstRtspServer
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
-
-gi.require_version('Gst', '1.0')
-gi.require_version('GstRtspServer', '1.0')
 
 def main():
     

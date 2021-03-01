@@ -7,11 +7,11 @@
 # gst-launch-1.0 -v filesrc location=1.MKV ! matroskademux ! h264parse ! nvoverlaysink
 #
 import sys, gi
+gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
-gi.require_version('Gst', '1.0')
 
 def main():
     
