@@ -15,109 +15,98 @@ import numpy as np
 import platform
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
-
 import pyds
 
 
-def analytics_meta_buffer_probe(pad,info,u_data):
-
-    # Get the buffer from the pipeline
+def nvanalytics_src_pad_buffer_probe(pad,info,u_data):
+    frame_number=0
+    num_rects=0
     gst_buffer = info.get_buffer()
     if not gst_buffer:
-        print("Unable to get GstBuffer")
-        return Gst.PadProbeReturn.OK
+        print("Unable to get GstBuffer ")
+        return
 
-    # With the pyds wrapper get the batch of metadata from the buffer
+    # Retrieve batch metadata from the gst_buffer
+    # Note that pyds.gst_buffer_get_nvds_batch_meta() expects the
+    # C address of gst_buffer as input, which is obtained with hash(gst_buffer)
     batch_meta = pyds.gst_buffer_get_nvds_batch_meta(hash(gst_buffer))
+    l_frame = batch_meta.frame_meta_list
 
-    # From the batch of metadata get the list of frames
-    list_of_frames = batch_meta.frame_meta_list
-
-    # Iterate thru the list of frames
-    while list_of_frames is not None:
+    while l_frame:
         try:
-            
-            # Get the metadata on the current frame
-            # The next frame is set at the end of the while loop
-            frame_meta = pyds.NvDsFrameMeta.cast(list_of_frames.data)
-
+            # Note that l_frame.data needs a cast to pyds.NvDsFrameMeta
+            # The casting is done by pyds.NvDsFrameMeta.cast()
+            # The casting also keeps ownership of the underlying memory
+            # in the C code, so the Python garbage collector will leave
+            # it alone.
+            frame_meta = pyds.NvDsFrameMeta.cast(l_frame.data)
         except StopIteration:
             break
 
-        # INFORMATION THAT IS PRESENT THE FRAME
-        #
-        # - frame_meta.frame_num
-        # - frame_meta.frame_num
-        # - frame_meta.source_id
-        # - frame_meta.batch_id
-        # - frame_meta.source_frame_width
-        # - frame_meta.source_frame_height
-        # - frame_meta.num_obj_meta
-
-        # Print the frame width and height to see what positions can the bounding boxed be drawed
-        # print('Frame Width: ' + str(frame_meta.source_frame_width)) = 1920
-        # print('Frame Height: ' + str(frame_meta.source_frame_height)) = 1080
-
-        # In the information of the frame we can get a list of objects detected on the frame.
-        list_of_objects = frame_meta.obj_meta_list
-
-        # Iterate thru the list of objects
-        while list_of_objects is not None:
+        # frame_number=frame_meta.frame_num
+        l_obj=frame_meta.obj_meta_list
+        # num_rects = frame_meta.num_obj_meta
+        # obj_counter = {
+        # PGIE_CLASS_ID_VEHICLE:0,
+        # PGIE_CLASS_ID_PERSON:0,
+        # PGIE_CLASS_ID_BICYCLE:0,
+        # PGIE_CLASS_ID_ROADSIGN:0
+        # }
+        print("#"*50)
+        while l_obj:
             try: 
-                # Get the metadata for each object in the frame
-                object_meta = pyds.NvDsObjectMeta.cast(list_of_objects.data)
-
+                # Note that l_obj.data needs a cast to pyds.NvDsObjectMeta
+                # The casting is done by pyds.NvDsObjectMeta.cast()
+                obj_meta = pyds.NvDsObjectMeta.cast(l_obj.data)
             except StopIteration:
                 break
-
-            # Go to the next object in the list
-            l_user_meta = object_meta.obj_user_meta_list
-
+            # obj_counter[obj_meta.class_id] += 1
+            l_user_meta = obj_meta.obj_user_meta_list
+            # Extract object level meta data from NvDsAnalyticsObjInfo
             while l_user_meta:
                 try:
-                    pass
-                    # user_meta = pyds.NvDsUserMeta.cast(l_user_meta.data)
-                    # print(user_meta.base_meta.meta_type)
-                    # if user_meta.base_meta.meta_type == pyds.nvds_get_user_meta_type("NVIDIA.DSANALYTICSOBJ.USER_META"):             
-                    #     user_meta_data = pyds.NvDsAnalyticsObjInfo.cast(user_meta.user_meta_data)
-                    #     if user_meta_data.dirStatus: print("Object {0} moving in direction: {1}".format(object_meta.object_id, user_meta_data.dirStatus))                    
-                    #     if user_meta_data.lcStatus: print("Object {0} line crossing status: {1}".format(object_meta.object_id, user_meta_data.lcStatus))
-                    #     if user_meta_data.ocStatus: print("Object {0} overcrowding status: {1}".format(object_meta.object_id, user_meta_data.ocStatus))
-                    #     if user_meta_data.roiStatus: print("Object {0} roi status: {1}".format(object_meta.object_id, user_meta_data.roiStatus))
+                    user_meta = pyds.NvDsUserMeta.cast(l_user_meta.data)
+                    if user_meta.base_meta.meta_type == pyds.nvds_get_user_meta_type("NVIDIA.DSANALYTICSOBJ.USER_META"):             
+                        user_meta_data = pyds.NvDsAnalyticsObjInfo.cast(user_meta.user_meta_data)
+                        # if user_meta_data.dirStatus: print("Object {0} moving in direction: {1}".format(obj_meta.object_id, user_meta_data.dirStatus))                    
+                        # if user_meta_data.lcStatus: print("Object {0} line crossing status: {1}".format(obj_meta.object_id, user_meta_data.lcStatus))
                 except StopIteration:
                     break
 
+                try:
+                    l_user_meta = l_user_meta.next
+                except StopIteration:
+                    break
             try: 
-                list_of_objects = list_of_objects.next
+                l_obj = l_obj.next
             except StopIteration:
                 break
-        # When there is no more object in the list of objects
-        # we continue here
-
-        # INFORMATION OF THE OBJECT METADATA
-        #
-        # - object_meta.class_id
-        # - object_meta.confidence
-        # - object_meta.obj_label
-        # - object_meta.object_id (If not tracker present on the pipeline, the ID is the same for all objects)
-        # - object_meta.rect_params
-
-        # Get the display meta from the batch meta, this is another metadata different that the frame meta collected 
-        # befor
-        display_meta = pyds.nvds_acquire_display_meta_from_pool(batch_meta)
-
-        # Define the number of rects that we are going to draw
-
-        # Draw the boxes on the frame
-        pyds.nvds_add_display_meta_to_frame(frame_meta, display_meta)
-
+    
+        # Get meta data from NvDsAnalyticsFrameMeta
+        l_user = frame_meta.frame_user_meta_list
+        while l_user:
+            try:
+                user_meta = pyds.NvDsUserMeta.cast(l_user.data)
+                if user_meta.base_meta.meta_type == pyds.nvds_get_user_meta_type("NVIDIA.DSANALYTICSFRAME.USER_META"):
+                    user_meta_data = pyds.NvDsAnalyticsFrameMeta.cast(user_meta.user_meta_data)
+                    print(obj_meta.obj_label)
+                    if user_meta_data.objLCCumCnt: print("Linecrossing Cumulative: {0}".format(user_meta_data.objLCCumCnt))
+                    # if user_meta_data.objLCCurrCnt: print("Linecrossing Current Frame: {0}".format(user_meta_data.objLCCurrCnt))
+            except StopIteration:
+                break
+            try:
+                l_user = l_user.next
+            except StopIteration:
+                break
+        
+        # print("Frame Number=", frame_number, "stream id=", frame_meta.pad_index, "Number of Objects=",num_rects,"Vehicle_count=",obj_counter[PGIE_CLASS_ID_VEHICLE],"Person_count=",obj_counter[PGIE_CLASS_ID_PERSON])
+        # Get frame rate through this probe
+        # fps_streams["stream{0}".format(frame_meta.pad_index)].get_fps()
         try:
-            # Go to the next frame in the list
-            list_of_frames = list_of_frames.next
+            l_frame=l_frame.next
         except StopIteration:
             break
-        # When there are not frames in the buffer we end here, and the function returns ok
-
+        print("#"*50)
 
     return Gst.PadProbeReturn.OK
 
@@ -216,6 +205,7 @@ def main(args):
     queue4 = create_element_or_error("queue","queue4")
     queue5 = create_element_or_error("queue","queue5")
     queue6 = create_element_or_error("queue","queue6")
+    queue7 = create_element_or_error("queue","queue7")
 
     pipeline.add(queue1)
     pipeline.add(queue2)
@@ -223,15 +213,17 @@ def main(args):
     pipeline.add(queue4)
     pipeline.add(queue5)
     pipeline.add(queue6)
+    pipeline.add(queue7)
 
     pgie = create_element_or_error("nvinfer", "primary-inference")
+    sgie = create_element_or_error("nvinfer", "secondary-inference")
     tracker = create_element_or_error("nvtracker", "tracker")
     analytics = create_element_or_error("nvdsanalytics", "analytics")
     converter = create_element_or_error("nvvideoconvert", "convertor")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     
-    nvosd.set_property('process-mode', 0)
-    nvosd.set_property('display-text', 0)
+    nvosd.set_property('process-mode', 2)
+    # nvosd.set_property('display-text', 0)
 
     transform=create_element_or_error("nvegltransform", "nvegl-transform")
     sink = create_element_or_error("nveglglessink", "nvvideo-renderer")
@@ -242,17 +234,21 @@ def main(args):
     streammux.set_property('batched-push-timeout', 4000000)
     
     pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/samples/configs/deepstream-app/config_infer_primary.txt")
+    sgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/samples/configs/deepstream-app/config_infer_secondary_carmake.txt")
+    sgie.set_property('unique-id', 12345)
 
-    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.1/lib/libnvds_nvdcf.so')
+
+    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.1/lib/libnvds_mot_klt.so')
     tracker.set_property('gpu-id', 0)
     tracker.set_property('enable-past-frame', 1)
     tracker.set_property('enable-batch-process', 1)
 
-    analytics.set_property("config-file", "config_nvdsanalytics.txt")
+    analytics.set_property("config-file", "./nvdsanalytics/traffic.txt")
 
     print("Adding elements to Pipeline")
     pipeline.add(pgie)
     pipeline.add(tracker)
+    pipeline.add(sgie)
     pipeline.add(analytics)
     pipeline.add(converter)
     pipeline.add(nvosd)
@@ -265,13 +261,15 @@ def main(args):
     pgie.link(queue2)
     queue2.link(tracker)
     tracker.link(queue3)
-    queue3.link(analytics)
-    analytics.link(queue4)
-    queue4.link(converter)
-    converter.link(queue5)
-    queue5.link(nvosd)
-    nvosd.link(queue6)
-    queue6.link(transform)
+    queue3.link(sgie)
+    sgie.link(queue4)
+    queue4.link(analytics)
+    analytics.link(queue5)
+    queue5.link(converter)
+    converter.link(queue6)
+    queue6.link(nvosd)
+    nvosd.link(queue7)
+    queue7.link(transform)
     transform.link(sink)
 
     # create an event loop and feed gstreamer bus mesages to it
@@ -284,7 +282,7 @@ def main(args):
     if not analytics_src_pad:
         sys.stderr.write("Unable to get src pad")
     else:
-        analytics_src_pad.add_probe(Gst.PadProbeType.BUFFER, analytics_meta_buffer_probe, 0)
+        analytics_src_pad.add_probe(Gst.PadProbeType.BUFFER, nvanalytics_src_pad_buffer_probe, 0)
 
     # List the sources
     print("Starting pipeline")

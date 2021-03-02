@@ -26,7 +26,7 @@ def main():
     # Create GST Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
     caps = create_element_or_error("capsfilter", "source-caps-source")
-    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM),width=1920,height=1080,framerate=30/1,format=NV12"))
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM),width=1280,height=720,framerate=60/1,format=NV12"))
 
     encoder = create_element_or_error("nvv4l2h264enc", "encoder")
     parser = create_element_or_error("h264parse", "parser")

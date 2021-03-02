@@ -1,23 +1,23 @@
 #
-# Author: Frank Sepulveda
-# Email: socieboy@gmail.com
+# Publish video to Ant Server
 #
-# Display multiple CSI cameras as source in the screen
-#
-# gst-launch-1.0 nvarguscamerasrc bufapi-version=true sensor-id=0 ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=30/1,format=NV12" ! m.sink_0 nvstreammux name=m batch-size=2 width=1280 height=720 live-source=1 ! nvinfer config-file-path=/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt ! nvtracker tracker-width=640 tracker-height=480 ll-lib-file=/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_mot_klt.so enable-batch-process=1 ! nvvideoconvert ! "video/x-raw(memory:NVMM),format=RGBA" ! nvmultistreamtiler ! nvdsosd ! nvvideoconvert ! nvegltransform ! nveglglessink nvarguscamerasrc bufapi-version=true sensor-id=1 ! "video/x-raw(memory:NVMM),width=1920,height=1080,framerate=30/1,format=NV12" ! m.sink_1
-#
-import sys, gi
+import argparse
+import sys
+sys.path.append('../')
+import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.create_element_or_error import create_element_or_error
+from common.is_aarch_64 import is_aarch64
+from common.bus_call import bus_call
 
 def main():
 
-    cameras_list = [
-        {"source": 0, "name": "Camera 1",},
-        {"source": 1, "name": "Camera 2"},
+   cameras_list = [
+       {"source": "/dev/video0", "name": "Camera 1"},
+       {"source": "/dev/video1", "name": "Camera 1"},
     ]
-    
+
     GObject.threads_init()
     Gst.init(None)
 
@@ -31,29 +31,30 @@ def main():
     pipeline.add(streammux)
 
     for camera in cameras_list:
-        source = create_element_or_error("nvarguscamerasrc", "source-" + camera['name'])
-        source.set_property('sensor-id', camera['source'])
-        source.set_property('bufapi-version', True)
-        caps = create_element_or_error("capsfilter", "source-caps-source-" + camera['name'])
-        caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM),width=1920,height=1080,framerate=60/1,format=NV12"))
-        pipeline.add(source)
-        pipeline.add(caps)
+        source = create_element_or_error("v4l2src", "source-" + camera['name'])
+        source.set_property('device', camera["source"])
+        caps = create_element_or_error("capsfilter", "source-caps-source-1")
+        caps.set_property('caps', Gst.Caps.from_string("video/x-raw, framerate=30/1"))
+    
+    pipeline.add(source)
+    pipeline.add(caps)
 
-        sinkpad = streammux.get_request_pad('sink_' + str(camera['source']))
-        srcpad = source.get_static_pad("src")
+    sinkpad = streammux.get_request_pad('sink_0')
+    srcpad = source.get_static_pad("src")
 
-        if not sinkpad:
-            print("Unable to create source sink pad")
-            exit(0)
-        if not srcpad:
-            print("Unable to create source src pad")
-            exit(0)
-        srcpad.link(sinkpad)
+    if not sinkpad:
+        print("Unable to create source sink pad")
+        exit(0)
+    if not srcpad:
+        print("Unable to create source src pad")
+        exit(0)
+    srcpad.link(sinkpad)
 
     pgie = create_element_or_error("nvinfer", "primary-inference")
     tracker = create_element_or_error("nvtracker", "tracker")
     convertor = create_element_or_error("nvvideoconvert", "converter-1")
     tiler = create_element_or_error("nvmultistreamtiler", "nvtiler")
+    convertor2 = create_element_or_error("nvvideoconvert", "converter-2")
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     transform = create_element_or_error("nvegltransform", "nvegl-transform")
     sink = create_element_or_error("nveglglessink", "nvvideo-renderer")
@@ -74,23 +75,23 @@ def main():
 
     # Set Element Properties
     streammux.set_property('live-source', 1)
-    streammux.set_property('width', 1920)
-    streammux.set_property('height', 1080)
+    streammux.set_property('width', 1280)
+    streammux.set_property('height', 720)
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/samples/configs/deepstream-app/config_infer_primary.txt")
+    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.0/samples/configs/deepstream-app/config_infer_primary.txt")
 
-    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.1/lib/libnvds_nvdcf.so')
+    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.0/lib/libnvds_nvdcf.so')
     tracker.set_property('enable-batch-process', 1)
     tracker.set_property('tracker-width', 640)
     tracker.set_property('tracker-height', 480)
 
-    tiler.set_property("rows", 2)
-    tiler.set_property("columns", 2)
-    tiler.set_property("width", 1920)
-    tiler.set_property("height", 1080)
+    tiler.set_property("rows", 1)
+    tiler.set_property("columns", 1)
+    tiler.set_property("width", 1280)
+    tiler.set_property("height", 720)
     sink.set_property("qos", 0)
 
     # Add Elemements to Pipielin
