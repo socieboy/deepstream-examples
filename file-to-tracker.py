@@ -279,7 +279,7 @@ def main(args):
     tracker.set_property('enable-past-frame', 1)
     tracker.set_property('enable-batch-process', 1)
 
-    analytics.set_property("config-file", "config_nvdsanalytics.txt")
+    analytics.set_property("config-file", "nvdsanalytics/traffic.txt")
 
     print("Adding elements to Pipeline")
     pipeline.add(pgie)

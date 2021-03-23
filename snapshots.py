@@ -2,9 +2,9 @@
 # Author: Frank Sepulveda
 # Email: socieboy@gmail.com
 #
-# Display camera on screen using "nveglglessink"
+# The folowing example records the video of the CSI Camera to a MP4 File, Encoded h265
 #
-# gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! nvvidconv ! nvegltransform ! nveglglessink
+# gst-launch-1.0 nvarguscamerasrc num-buffers=1 ! 'video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv ! jpegenc ! filesink location=test.jpg
 #
 import sys, gi
 gi.require_version('Gst', '1.0')
@@ -22,30 +22,33 @@ def main():
     print("Creating Pipeline")
     pipeline = Gst.Pipeline()
     if not pipeline:
-        sys.stderr.write(" Unable to create Pipeline")
+        sys.stderr.write("Unable to create Pipeline")
     
-    # Create Elements
+    print("Creating Elements")
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    caps = create_element_or_error("capsfilter", "source-caps-source")
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM),width=1280,height=720,framerate=30/1,format=NV12"))
     convertor = create_element_or_error("nvvidconv", "converter-1")
-    transform = create_element_or_error("nvegltransform", "nvegl-transform")
-    sink = create_element_or_error("nveglglessink", "egl-overlay")
+    s_encoder = create_element_or_error("jpegenc", "snapshot-encoder")
+    s_sink = create_element_or_error("filesink", "snapshot-sink")
 
-    # Set Element Properties
+    print("Set element properties")
     source.set_property('sensor-id', 1)
-    source.set_property('bufapi-version', True)
+    source.set_property('num-buffers', 1)
+    s_sink.set_property('location', 'python-test.jpeg')
     
-    # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
     pipeline.add(source)
+    pipeline.add(caps)
     pipeline.add(convertor)
-    pipeline.add(sink)
-    pipeline.add(transform)
+    pipeline.add(s_encoder)
+    pipeline.add(s_sink)
 
-    # Link the elements together:
     print("Linking elements in the Pipeline")
-    source.link(convertor)
-    convertor.link(transform)
-    transform.link(sink)
+    source.link(caps)
+    caps.link(convertor)
+    convertor.link(s_encoder)
+    s_encoder.link(s_sink)
 
     # Create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()
