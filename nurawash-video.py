@@ -229,8 +229,8 @@ def main(args):
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
     
-    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/sources/objectDetector_Yolo/config_infer_primary_yoloV3.txt")
-    # pgie.set_property('config-file-path', "models/nurawash/config_infer_primary.txt")
+    # pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/samples/configs/deepstream-app/config_infer_primary.txt")
+    pgie.set_property('config-file-path', "models/ssd-nurawash/config.txt")
 
     print("Adding elements to Pipeline")
     pipeline.add(pgie)
