@@ -182,7 +182,7 @@ def main(args):
 
     pipeline.add(streammux)
 
-    source_bin = create_source_bin("file:/deepstream-examples/videos/front.mp4")
+    source_bin = create_source_bin("file:/home/socieboy/edge/deepstream-examples/videos/front.mp4")
 
     if not source_bin:
         sys.stderr.write("Unable to create source bin")
@@ -228,9 +228,13 @@ def main(args):
     streammux.set_property('height', 1080)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
+
+    sink.set_property('sync', False)
+    sink.set_property('window-width', 1080)
+    sink.set_property('window-height', 720)
     
     # pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/samples/configs/deepstream-app/config_infer_primary.txt")
-    pgie.set_property('config-file-path', "models/ssd-nurawash/config.txt")
+    pgie.set_property('config-file-path', "models/yolov3-nurawash-80/config_infer_primary_yoloV3.txt")
 
     print("Adding elements to Pipeline")
     pipeline.add(pgie)

@@ -9,6 +9,7 @@
 import sys, gi
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
+sys.path.append('/')
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
@@ -31,7 +32,7 @@ def main():
     sink = create_element_or_error("nveglglessink", "egl-overlay")
 
     # Set Element Properties
-    source.set_property('sensor-id', 1)
+    source.set_property('sensor-id', 0)
     source.set_property('bufapi-version', True)
     
     # Add Elemements to Pipielin
