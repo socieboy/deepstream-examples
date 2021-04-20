@@ -233,12 +233,12 @@ def main(args):
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
     
-    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/samples/configs/deepstream-app/config_infer_primary.txt")
-    sgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/samples/configs/deepstream-app/config_infer_secondary_carmake.txt")
+    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/config_infer_primary.txt")
+    sgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/config_infer_secondary_carmake.txt")
     sgie.set_property('unique-id', 12345)
 
 
-    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.1/lib/libnvds_mot_klt.so')
+    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream/lib/libnvds_mot_klt.so')
     tracker.set_property('gpu-id', 0)
     tracker.set_property('enable-past-frame', 1)
     tracker.set_property('enable-batch-process', 1)

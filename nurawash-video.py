@@ -233,7 +233,7 @@ def main(args):
     sink.set_property('window-width', 1080)
     sink.set_property('window-height', 720)
     
-    # pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream-5.1/samples/configs/deepstream-app/config_infer_primary.txt")
+    # pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/config_infer_primary.txt")
     pgie.set_property('config-file-path', "models/yolov3-nurawash-80/config_infer_primary_yoloV3.txt")
 
     print("Adding elements to Pipeline")

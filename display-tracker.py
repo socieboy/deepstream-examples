@@ -55,7 +55,7 @@ def main():
     #Set properties of tracker
     tracker.set_property('tracker-width', 640)
     tracker.set_property('tracker-height', 384)
-    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream-5.1/lib/libnvds_nvdcf.so')
+    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream/lib/libnvds_nvdcf.so')
     tracker.set_property('gpu-id', 0)
     tracker.set_property('enable-batch-process', 1)
     tracker.set_property('enable-past-frame', 1)
