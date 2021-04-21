@@ -17,7 +17,6 @@ def main():
     cameras_list = [
         {"source": 0, "name": "Camera 1",},
         {"source": 1, "name": "Camera 2"},
-        {"source": 2, "name": "Camera 3"},
     ]
     
     GObject.threads_init()
@@ -69,6 +68,7 @@ def main():
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
+
 
     tiler.set_property("rows", 2)
     tiler.set_property("columns", 2)

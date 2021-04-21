@@ -40,7 +40,7 @@ def main():
     sink = create_element_or_error("rtmpsink", "sink")
 
     # Set Element Properties
-    source.set_property('sensor-id', 0)
+    source.set_property('sensor-id', 1)
     sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/stream-test')
 
     # Add Elemements to Pipielin

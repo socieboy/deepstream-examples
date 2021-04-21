@@ -73,7 +73,7 @@ def main():
     tiler.set_property("columns", 2)
     tiler.set_property("width", 1920)
     tiler.set_property("height", 1080)
-    
+
     sink.set_property("qos", 0)
 
     # Add Elemements to Pipielin
@@ -108,5 +108,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
