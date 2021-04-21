@@ -17,6 +17,7 @@ def main():
     cameras_list = [
         {"source": 0, "name": "Camera 1",},
         {"source": 1, "name": "Camera 2"},
+        {"source": 2, "name": "Camera 3"},
     ]
     
     GObject.threads_init()
@@ -51,27 +52,15 @@ def main():
             exit(0)
         srcpad.link(sinkpad)
 
-    pgie = create_element_or_error("nvinfer", "primary-inference")
-    tracker = create_element_or_error("nvtracker", "tracker")
-    convertor = create_element_or_error("nvvideoconvert", "converter-1")
     tiler = create_element_or_error("nvmultistreamtiler", "nvtiler")
-    nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     transform = create_element_or_error("nvegltransform", "nvegl-transform")
     sink = create_element_or_error("nveglglessink", "nvvideo-renderer")
 
     queue1=create_element_or_error("queue","queue1")
     queue2=create_element_or_error("queue","queue2")
-    queue3=create_element_or_error("queue","queue3")
-    queue4=create_element_or_error("queue","queue4")
-    queue5=create_element_or_error("queue","queue5")
-    queue6=create_element_or_error("queue","queue6")
 
     pipeline.add(queue1)
     pipeline.add(queue2)
-    pipeline.add(queue3)
-    pipeline.add(queue4)
-    pipeline.add(queue5)
-    pipeline.add(queue6)
 
     # Set Element Properties
     streammux.set_property('live-source', 1)
@@ -81,13 +70,6 @@ def main():
     streammux.set_property('batch-size', 1)
     streammux.set_property('batched-push-timeout', 4000000)
 
-    pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/config_infer_primary.txt")
-
-    tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream/lib/libnvds_nvdcf.so')
-    tracker.set_property('enable-batch-process', 1)
-    tracker.set_property('tracker-width', 640)
-    tracker.set_property('tracker-height', 480)
-
     tiler.set_property("rows", 2)
     tiler.set_property("columns", 2)
     tiler.set_property("width", 1920)
@@ -96,11 +78,7 @@ def main():
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
-    pipeline.add(pgie)
-    pipeline.add(tracker)
     pipeline.add(tiler)
-    pipeline.add(convertor)
-    pipeline.add(nvosd)
     pipeline.add(transform)
     pipeline.add(sink)
 
@@ -108,17 +86,9 @@ def main():
     print("Linking elements in the Pipeline")
 
     streammux.link(queue1)
-    queue1.link(pgie)
-    pgie.link(queue2)
-    queue2.link(tracker)
-    tracker.link(queue3)
-    queue3.link(tiler)
-    tiler.link(queue4)
-    queue4.link(convertor)
-    convertor.link(queue5)
-    queue5.link(nvosd)
-    nvosd.link(queue6)
-    queue6.link(transform)
+    queue1.link(tiler)
+    tiler.link(queue2)
+    queue2.link(transform)
     transform.link(sink)
     
     # Create an event loop and feed gstreamer bus mesages to it

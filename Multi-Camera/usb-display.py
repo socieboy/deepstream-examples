@@ -1,5 +1,5 @@
 #
-# Publish video to Ant Server
+# From USB  to Display
 #
 import argparse
 import sys
