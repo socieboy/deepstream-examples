@@ -2,16 +2,17 @@
 # Author: Frank Sepulveda
 # Email: socieboy@gmail.com
 #
-# Display a MKV file on Screen
+# Display camera on screen using "nveglglessink"
 #
-# gst-launch-1.0 -v filesrc location=1.MKV ! matroskademux ! h264parse ! nvoverlaysink
+# gst-launch-1.0 nvarguscamerasrc sensor-id=0 ! nvvidconv ! nvegltransform ! nveglglessink
 #
 import sys, gi
+sys.path.append("../")
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
+sys.path.append('/')
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
-
 
 def main():
     
@@ -19,17 +20,14 @@ def main():
     GObject.threads_init()
     Gst.init(None)
 
-
     # Create Pipeline Element
     print("Creating Pipeline")
     pipeline = Gst.Pipeline()
     if not pipeline:
         sys.stderr.write(" Unable to create Pipeline")
     
-    # 
-    # ______________________________
     # Create Elements
-    source = create_element_or_error("filesink", "camera-source")
+    source = create_element_or_error("nvarguscamerasrc", "camera-source")
     convertor = create_element_or_error("nvvidconv", "converter-1")
     transform = create_element_or_error("nvegltransform", "nvegl-transform")
     sink = create_element_or_error("nveglglessink", "egl-overlay")
@@ -44,7 +42,6 @@ def main():
     pipeline.add(convertor)
     pipeline.add(sink)
     pipeline.add(transform)
-
 
     # Link the elements together:
     print("Linking elements in the Pipeline")

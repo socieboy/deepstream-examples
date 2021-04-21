@@ -7,6 +7,7 @@
 # gst-launch-1.0 nvarguscamerasrc num-buffers=1 ! 'video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, format=(string)NV12, framerate=(fraction)30/1' ! nvvidconv ! jpegenc ! filesink location=test.jpg
 #
 import sys, gi
+sys.path.append("../")
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call

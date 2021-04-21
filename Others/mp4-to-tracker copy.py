@@ -6,6 +6,7 @@
 # gst-launch-1.0 filesrc location=video.mp4 ! qtdemux name=demux demux.video_0 ! queue ! h264parse ! omxh264dec ! nvegltransform ! nveglglessink -e
 #
 import sys, gi
+sys.path.append("../")
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call

@@ -5,6 +5,7 @@
 # Example to keep a record of detected objects.
 #
 import sys, gi, time
+sys.path.append("../")
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call

@@ -5,6 +5,7 @@
 # Display camera on screen using "nvoverlaysink".
 #
 import sys, gi
+sys.path.append("../")
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call

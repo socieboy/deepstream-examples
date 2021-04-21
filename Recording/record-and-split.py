@@ -14,6 +14,7 @@
 # The folowing example publish the video to ant server and record the video locally using a quees
 #
 import sys,datetime, gi
+sys.path.append("../")
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call

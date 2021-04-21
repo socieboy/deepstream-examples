@@ -7,6 +7,7 @@
 # gst-launch-1.0 nvarguscamerasrc ! nvv4l2h265enc bitrate=8000000 ! h265parse ! filesink location=1280.mp4 -e
 #
 import sys, datetime, gi
+sys.path.append("../")
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
 from common.bus_call import bus_call
