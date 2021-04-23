@@ -10,7 +10,6 @@ import sys, gi
 sys.path.append("../")
 gi.require_version('Gst', '1.0')
 from gi.repository import GObject, Gst
-sys.path.append('/')
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
@@ -28,25 +27,32 @@ def main():
     
     # Create Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
-    convertor = create_element_or_error("nvvidconv", "converter-1")
+    caps = create_element_or_error("capsfilter", "source-caps")
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, framerate=30/1, format=(string)NV12"))
+    convertor = create_element_or_error('nvvidconv', 'converter')
+    capsConverter = create_element_or_error("capsfilter", "converter-caps")
+    capsConverter.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)720, height=(int)480, framerate=30/1, format=(string)NV12"))
     transform = create_element_or_error("nvegltransform", "nvegl-transform")
     sink = create_element_or_error("nveglglessink", "egl-overlay")
 
     # Set Element Properties
-    source.set_property('sensor-id', 0)
-    source.set_property('bufapi-version', True)
+    source.set_property('sensor-id', 1)
     
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
     pipeline.add(source)
+    pipeline.add(caps)
     pipeline.add(convertor)
-    pipeline.add(sink)
+    pipeline.add(capsConverter)
     pipeline.add(transform)
+    pipeline.add(sink)
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
-    source.link(convertor)
-    convertor.link(transform)
+    source.link(caps)
+    caps.link(convertor)
+    convertor.link(capsConverter)
+    capsConverter.link(transform)
     transform.link(sink)
 
     # Create an event loop and feed gstreamer bus mesages to it
