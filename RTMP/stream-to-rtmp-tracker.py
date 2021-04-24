@@ -33,6 +33,9 @@ def sink_pad_buffer_probe(pad,info,u_data):
         except StopIteration:
             break
 
+        t = time.localtime()
+        current_time = time.strftime("%H:%M:%S", t)
+        
         # detected_time = frame_meta.ntp_timestamp
         # print(detected_time)
         list_of_objects = frame_meta.obj_meta_list
@@ -43,8 +46,6 @@ def sink_pad_buffer_probe(pad,info,u_data):
                 object_meta = pyds.NvDsObjectMeta.cast(list_of_objects.data)
                 # https://docs.nvidia.com/metropolis/deepstream/5.0DP/python-api/NvDsMeta/NvDsObjectMeta.html
                 if object_meta.object_id not in detectedObjectsIds:
-                    t = time.localtime()
-                    current_time = time.strftime("%H:%M:%S", t)
 
                     detectedObjectsIds.append(object_meta.object_id)
                     detectedObjects.append({
