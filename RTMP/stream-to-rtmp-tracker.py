@@ -33,6 +33,8 @@ def sink_pad_buffer_probe(pad,info,u_data):
         except StopIteration:
             break
 
+        # detected_time = frame_meta.ntp_timestamp
+        # print(detected_time)
         list_of_objects = frame_meta.obj_meta_list
 
         while list_of_objects is not None:
@@ -46,10 +48,10 @@ def sink_pad_buffer_probe(pad,info,u_data):
 
                     detectedObjectsIds.append(object_meta.object_id)
                     detectedObjects.append({
-                        'id' : str(object_meta.object_id),
-                        'label': str(object_meta.obj_label),
-                        'time': current_time,
-                        'confidence': str(object_meta.confidence)
+                        "id" : str(object_meta.object_id),
+                        "label": str(object_meta.obj_label),
+                        "time": str(current_time),
+                        "confidence": str(object_meta.confidence)
                     })
                     
             except StopIteration:
@@ -75,17 +77,21 @@ def sink_pad_buffer_probe(pad,info,u_data):
             detectedObjectsList = detectedObjects
             
         for _object in detectedObjectsList:
-            textDisplay = textDisplay + _object["time"] + ": Detected: \"" + _object["label"] + "\", ID: " + _object["id"] + ", Confidence: " + _object["confidence"] + "\n"
+            # print("Time      : " + _object["time"])
+            # print("Object ID : " + _object["id"])
+            # print("Object    : " + _object["label"])
+            # print("Confidence: " + _object["confidence"])
+            # textDisplay = textDisplay + _object["time"] + ": Detected: \"" + _object["label"] + "\", ID: " + _object["id"] + ", Confidence: " + _object["confidence"] + "\n"
 
-        py_nvosd_text_params.display_text = textDisplay
-        py_nvosd_text_params.x_offset = 10
-        py_nvosd_text_params.y_offset = 12
-        py_nvosd_text_params.font_params.font_name = "Serif"
-        py_nvosd_text_params.font_params.font_size = 10
-        py_nvosd_text_params.font_params.font_color.set(1.0, 1.0, 1.0, 1.0)
-        py_nvosd_text_params.set_bg_clr = 1
-        py_nvosd_text_params.text_bg_clr.set(0.0, 0.0, 0.0, 1.0)
-        pyds.nvds_add_display_meta_to_frame(frame_meta, display_meta)
+        # py_nvosd_text_params.display_text = textDisplay
+        # py_nvosd_text_params.x_offset = 10
+        # py_nvosd_text_params.y_offset = 12
+        # py_nvosd_text_params.font_params.font_name = "Serif"
+        # py_nvosd_text_params.font_params.font_size = 10
+        # py_nvosd_text_params.font_params.font_color.set(1.0, 1.0, 1.0, 1.0)
+        # py_nvosd_text_params.set_bg_clr = 1
+        # py_nvosd_text_params.text_bg_clr.set(0.0, 0.0, 0.0, 1.0)
+        # pyds.nvds_add_display_meta_to_frame(frame_meta, display_meta)
 			
     return Gst.PadProbeReturn.OK
 
@@ -105,6 +111,8 @@ def main():
     
     # Create GST Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    srcCaps = create_element_or_error("capsfilter", "source-caps")
+    srcCaps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, framerate=30/1, format=(string)NV12"))
     streammux = create_element_or_error("nvstreammux", "Stream-muxer")
     pgie = create_element_or_error("nvinfer", "primary-inference")
     tracker = create_element_or_error("nvtracker", "tracker")
@@ -114,6 +122,7 @@ def main():
     encoder = create_element_or_error("nvv4l2h264enc", "encoder")
     parser = create_element_or_error("h264parse", "parser")
     muxer = create_element_or_error("flvmux", "muxer")
+    queue = create_element_or_error("queue", "queue-sink")
     sink = create_element_or_error("rtmpsink", "sink")
 
     # Set Element Properties
@@ -124,8 +133,8 @@ def main():
     encoder.set_property('bitrate', 4000000)
     
     streammux.set_property('live-source', 1)
-    streammux.set_property('width', 1920)
-    streammux.set_property('height', 1080)
+    streammux.set_property('width', 1080)
+    streammux.set_property('height', 720)
     streammux.set_property('num-surfaces-per-frame', 1)
     streammux.set_property('nvbuf-memory-type', 4)
     streammux.set_property('batch-size', 1)
@@ -138,11 +147,12 @@ def main():
     tracker.set_property('enable-batch-process', 1)
     tracker.set_property('ll-config-file', '/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/tracker_config.yml')
 
-    sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/streaming-test')
+    sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/csi-camera')
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
     pipeline.add(source)
+    pipeline.add(srcCaps)
     pipeline.add(streammux)
     pipeline.add(pgie)
     pipeline.add(tracker)
@@ -152,6 +162,7 @@ def main():
     pipeline.add(encoder)
     pipeline.add(parser)
     pipeline.add(muxer)
+    pipeline.add(queue)
     pipeline.add(sink)
 
     sinkpad = streammux.get_request_pad("sink_0")
@@ -160,7 +171,8 @@ def main():
 
     # Link the elements together:
     print("Linking elements in the Pipeline")
-    source.link(streammux)
+    source.link(srcCaps)
+    srcCaps.link(streammux)
     streammux.link(pgie)
     pgie.link(tracker)
     tracker.link(convertor)
@@ -169,7 +181,8 @@ def main():
     convertor2.link(encoder)
     encoder.link(parser)
     parser.link(muxer)
-    muxer.link(sink)
+    muxer.link(queue)
+    queue.link(sink)
     
     # Create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()

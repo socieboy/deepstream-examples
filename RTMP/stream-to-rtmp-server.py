@@ -11,12 +11,6 @@ from gi.repository import GObject, Gst
 from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 
-
-# VIDEO_OUTPUT_WIDTH=2560
-# VIDEO_OUTPUT_HEIGHT=1440
-VIDEO_OUTPUT_WIDTH=720
-VIDEO_OUTPUT_HEIGHT=480
-
 def main():
     
     # Standard GStreamer initialization
@@ -32,7 +26,7 @@ def main():
     # Create GST Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
     caps = create_element_or_error("capsfilter", "source-caps")
-    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, framerate=30/1, format=(string)NV12"))
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, framerate=30/1, format=(string)NV12"))
     converter = create_element_or_error('nvvidconv', 'converter')
     capsConverter = create_element_or_error("capsfilter", "converter-caps")
     capsConverter.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)720, height=(int)480, framerate=30/1, format=(string)NV12"))
