@@ -77,10 +77,10 @@ def sink_pad_buffer_probe(pad,info,u_data):
             detectedObjectsList = detectedObjects
             
         for _object in detectedObjectsList:
-            # print("Time      : " + _object["time"])
-            # print("Object ID : " + _object["id"])
-            # print("Object    : " + _object["label"])
-            # print("Confidence: " + _object["confidence"])
+            print("Time      : " + _object["time"])
+            print("Object ID : " + _object["id"])
+            print("Object    : " + _object["label"])
+            print("Confidence: " + _object["confidence"])
             # textDisplay = textDisplay + _object["time"] + ": Detected: \"" + _object["label"] + "\", ID: " + _object["id"] + ", Confidence: " + _object["confidence"] + "\n"
 
         # py_nvosd_text_params.display_text = textDisplay
@@ -147,6 +147,7 @@ def main():
     tracker.set_property('enable-batch-process', 1)
     tracker.set_property('ll-config-file', '/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/tracker_config.yml')
 
+    muxer.set_property('streamable', True)
     sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/csi-camera')
 
     # Add Elemements to Pipielin
