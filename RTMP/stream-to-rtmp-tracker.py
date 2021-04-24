@@ -77,7 +77,7 @@ def sink_pad_buffer_probe(pad,info,u_data):
             detectedObjectsList = detectedObjects
             
         for _object in detectedObjectsList:
-            print("Time      : " + _object["time"])
+            print("Time      : " + str(_object["time"]))
             print("Object ID : " + _object["id"])
             print("Object    : " + _object["label"])
             print("Confidence: " + _object["confidence"])
