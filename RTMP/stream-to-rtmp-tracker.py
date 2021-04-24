@@ -35,7 +35,7 @@ def sink_pad_buffer_probe(pad,info,u_data):
 
         t = time.localtime()
         current_time = time.strftime("%H:%M:%S", t)
-        
+
         # detected_time = frame_meta.ntp_timestamp
         # print(detected_time)
         list_of_objects = frame_meta.obj_meta_list
@@ -48,12 +48,18 @@ def sink_pad_buffer_probe(pad,info,u_data):
                 if object_meta.object_id not in detectedObjectsIds:
 
                     detectedObjectsIds.append(object_meta.object_id)
+
                     detectedObjects.append({
                         "id" : str(object_meta.object_id),
                         "label": str(object_meta.obj_label),
                         "time": str(current_time),
                         "confidence": str(object_meta.confidence)
                     })
+                    print("Time      : " + str(current_time))
+                    print("Object ID : " + str(object_meta.object_id))
+                    print("Object    : " + str(object_meta.obj_label))
+                    print("Confidence: " + str(object_meta.confidence))
+                    print("--------------------------------------- \n")
                     
             except StopIteration:
                 break
@@ -67,21 +73,22 @@ def sink_pad_buffer_probe(pad,info,u_data):
         except StopIteration:
             break
 
-        display_meta=pyds.nvds_acquire_display_meta_from_pool(batch_meta)
-        display_meta.num_labels = 1
-        py_nvosd_text_params = display_meta.text_params[0]
+        # display_meta=pyds.nvds_acquire_display_meta_from_pool(batch_meta)
+        # display_meta.num_labels = 1
+        # py_nvosd_text_params = display_meta.text_params[0]
 
-        textDisplay = "DETECTED OBJECTS:\n\n"
-        if len(detectedObjects) > 10:
-            detectedObjectsList = detectedObjects[-10]
-        else:
-            detectedObjectsList = detectedObjects
-            
-        for _object in detectedObjectsList:
-            print("Time      : " + str(_object["time"]))
-            print("Object ID : " + _object["id"])
-            print("Object    : " + _object["label"])
-            print("Confidence: " + _object["confidence"])
+        # textDisplay = "DETECTED OBJECTS:\n\n"
+        # if len(detectedObjects) > 10:
+            # detectedObjectsList = detectedObjects[-10]
+        # else:
+            # detectedObjectsList = detectedObjects
+        
+        # for _object in detectedObjectsList:
+            # print(_object)
+            # print("Time      : " + str(_object["time"]))
+            # print("Object ID : " + _object["id"])
+            # print("Object    : " + _object["label"])
+            # print("Confidence: " + _object["confidence"])
             # textDisplay = textDisplay + _object["time"] + ": Detected: \"" + _object["label"] + "\", ID: " + _object["id"] + ", Confidence: " + _object["confidence"] + "\n"
 
         # py_nvosd_text_params.display_text = textDisplay
