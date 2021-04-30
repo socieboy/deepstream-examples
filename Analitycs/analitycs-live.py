@@ -156,10 +156,12 @@ def main(args):
     tracker.set_property('enable-past-frame', 1)
     tracker.set_property('enable-batch-process', 1)
 
-    analytics.set_property("config-file", "./nvdsanalytics/live.txt")
+    tiler.set_property('rows', 2)
+    tiler.set_property('columns', 1)
+    analytics.set_property("config-file", "./analitycs.txt")
 
-    nvosd.set_property('process-mode', 0)
-    nvosd.set_property('display-text', 0)
+    # nvosd.set_property('process-mode', 2)
+    nvosd.set_property('display-text', 2)
 
     sink.set_property('sync', False)
 

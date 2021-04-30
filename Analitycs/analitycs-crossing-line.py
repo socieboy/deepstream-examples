@@ -182,7 +182,7 @@ def main(args):
 
     pipeline.add(streammux)
 
-    source_bin = create_source_bin("file:/deepstream-examples/videos/traffic.mp4")
+    source_bin = create_source_bin("file:/deepstream-examples/Analitycs/traffic.mp4")
 
     if not source_bin:
         sys.stderr.write("Unable to create source bin")
@@ -243,7 +243,7 @@ def main(args):
     tracker.set_property('enable-past-frame', 1)
     tracker.set_property('enable-batch-process', 1)
 
-    analytics.set_property("config-file", "./nvdsanalytics/traffic.txt")
+    analytics.set_property("config-file", "./analitycs.txt")
 
     print("Adding elements to Pipeline")
     pipeline.add(pgie)

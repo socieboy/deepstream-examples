@@ -26,10 +26,10 @@ def main():
     # Create GST Elements
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
     caps = create_element_or_error("capsfilter", "source-caps")
-    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1280, height=(int)720, framerate=30/1, format=(string)NV12"))
+    caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, framerate=30/1, format=(string)NV12"))
     converter = create_element_or_error('nvvidconv', 'converter')
     capsConverter = create_element_or_error("capsfilter", "converter-caps")
-    capsConverter.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)720, height=(int)480, framerate=30/1, format=(string)NV12"))
+    capsConverter.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, framerate=30/1, format=(string)NV12"))
     encoder = create_element_or_error("nvv4l2h264enc", "encoder")
     parser = create_element_or_error("h264parse", "parser")
     muxer = create_element_or_error("flvmux", "muxer")
@@ -38,12 +38,12 @@ def main():
 
     # Set Element Properties
     # converter.set_property('flip-method', 1)
-    encoder.set_property('bitrate', 4000000)
-    encoder.set_property('maxperf-enable', True)
-    source.set_property('sensor-id', 1)
-    source.set_property('do-timestamp', True)
-    muxer.set_property('streamable', True)
-    sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/stream-test')
+    encoder.set_property('bitrate', 8000000)
+    # encoder.set_property('maxperf-enable', True)
+    source.set_property('sensor-id', 0)
+    # source.set_property('do-timestamp', True)
+    # muxer.set_property('streamable', True)
+    sink.set_property('location', 'rtmp://media.streamit.live/LiveApp/test')
 
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")

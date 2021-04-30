@@ -178,25 +178,27 @@ def main(args):
     pipeline = Gst.Pipeline()
 
     if not pipeline:
-        sys.stderr.write(" Unable to create Pipeline")
-    print("Creating streamux")
-
-    streammux = create_element_or_error("nvstreammux", "Stream-muxer")
-
-    pipeline.add(streammux)
-
-    source_bin = create_source_bin("file:/deepstream-examples/videos/traffic2.mp4")
-
-    if not source_bin:
-        sys.stderr.write("Unable to create source bin")
+        sys.stderr.write("Unable to create Pipeline")
     
+    print("Create elements")
+
+    muxer = create_element_or_error("nvstreammux", "Stream-muxer")
+    muxer.set_property('live-source', True)
+    muxer.set_property('sync-inputs', True)
+    muxer.set_property('width', 1920)
+    muxer.set_property('height', 1080)
+    muxer.set_property('batch-size', 3)
+    muxer.set_property('batched-push-timeout', 4000000)
+    pipeline.add(muxer)
+
+    source_bin = create_source_bin("file:/deepstream-examples/Analitycs/traffic.mp4")
     pipeline.add(source_bin)
 
-    sinkpad= streammux.get_request_pad('sink_0') 
+    sinkpad = muxer.get_request_pad('sink_0') 
     if not sinkpad:
         sys.stderr.write("Unable to create sink pad bin")
 
-    srcpad=source_bin.get_static_pad("src")
+    srcpad = source_bin.get_static_pad("src")
     if not srcpad:
         sys.stderr.write("Unable to create src pad bin")
 
@@ -208,6 +210,7 @@ def main(args):
     queue4 = create_element_or_error("queue","queue4")
     queue5 = create_element_or_error("queue","queue5")
     queue6 = create_element_or_error("queue","queue6")
+    queue7 = create_element_or_error("queue", "queue7")
 
     pipeline.add(queue1)
     pipeline.add(queue2)
@@ -215,32 +218,39 @@ def main(args):
     pipeline.add(queue4)
     pipeline.add(queue5)
     pipeline.add(queue6)
+    pipeline.add(queue7)
 
     pgie = create_element_or_error("nvinfer", "primary-inference")
-    tracker = create_element_or_error("nvtracker", "tracker")
-    analytics = create_element_or_error("nvdsanalytics", "analytics")
-    converter = create_element_or_error("nvvideoconvert", "convertor")
-    nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
-    
-    nvosd.set_property('process-mode', 2)
-    # nvosd.set_property('display-text', 0)
-
-    transform=create_element_or_error("nvegltransform", "nvegl-transform")
-    sink = create_element_or_error("nveglglessink", "nvvideo-renderer")
-
-    streammux.set_property('width', 1920)
-    streammux.set_property('height', 1080)
-    streammux.set_property('batch-size', 1)
-    streammux.set_property('batched-push-timeout', 4000000)
-    
     pgie.set_property('config-file-path', "/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/config_infer_primary.txt")
 
+    tracker = create_element_or_error("nvtracker", "tracker")
     tracker.set_property('ll-lib-file', '/opt/nvidia/deepstream/deepstream/lib/libnvds_mot_klt.so')
     tracker.set_property('gpu-id', 0)
     tracker.set_property('enable-past-frame', 1)
     tracker.set_property('enable-batch-process', 1)
 
-    analytics.set_property("config-file", "./nvdsanalytics/traffic2.txt")
+    analytics = create_element_or_error("nvdsanalytics", "analytics")
+    analytics.set_property("config-file", "./analitycs.txt")
+
+    converter = create_element_or_error("nvvideoconvert", "convertor")
+
+    nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
+    nvosd.set_property('process-mode', 2)
+    nvosd.set_property('display-text', 0)
+
+    encoder = create_element_or_error("nvv4l2h264enc", "encoder")
+    encoder.set_property('maxperf-enable', True)
+    encoder.set_property('insert-sps-pps', True)
+    encoder.set_property('bitrate', 8000000)
+
+    parser = create_element_or_error("h264parse", "parser")
+
+    flmuxer = create_element_or_error("flvmux", "flmuxer")
+    flmuxer.set_property('streamable', True)
+
+    sink = create_element_or_error("rtmpsink", "sink")
+    sink.set_property('location', "rtmp://media.streamit.live/LiveApp/analitycs")
+    sink.set_property('sync', False)
 
     print("Adding elements to Pipeline")
     pipeline.add(pgie)
@@ -248,11 +258,13 @@ def main(args):
     pipeline.add(analytics)
     pipeline.add(converter)
     pipeline.add(nvosd)
-    pipeline.add(transform)
+    pipeline.add(encoder)
+    pipeline.add(parser)
+    pipeline.add(flmuxer)
     pipeline.add(sink)
 
     print("Linking elements in the Pipeline")
-    streammux.link(queue1)
+    muxer.link(queue1)
     queue1.link(pgie)
     pgie.link(queue2)
     queue2.link(tracker)
@@ -263,8 +275,11 @@ def main(args):
     converter.link(queue5)
     queue5.link(nvosd)
     nvosd.link(queue6)
-    queue6.link(transform)
-    transform.link(sink)
+    queue6.link(encoder)
+    encoder.link(parser)
+    parser.link(flmuxer)
+    flmuxer.link(queue7)
+    queue7.link(sink)
 
     # create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()
@@ -280,7 +295,7 @@ def main(args):
 
     # List the sources
     print("Starting pipeline")
-    # start play back and listed to events		
+
     pipeline.set_state(Gst.State.PLAYING)
     try:
         loop.run()

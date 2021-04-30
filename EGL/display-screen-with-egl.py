@@ -36,7 +36,7 @@ def main():
     sink = create_element_or_error("nveglglessink", "egl-overlay")
 
     # Set Element Properties
-    source.set_property('sensor-id', 1)
+    source.set_property('sensor-id', 0)
     
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")
