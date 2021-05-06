@@ -17,12 +17,24 @@ from common.bus_call import bus_call
 from common.create_element_or_error import create_element_or_error
 import pyds
 
+'''
+gst-launch-1.0 nvstreammux name=mux live-source=1 sync-inputs=1 batch-size=3 width=3264 height=1848 batched-push-timeout=4000000 ! \
+nvinfer config-file-path=/opt/nvidia/deepstream/deepstream/samples/configs/deepstream-app/config_infer_primary.txt ! \
+nvstreamdemux name=demux \
+
+nvarguscamerasrc sensor-id=0 bufapi-version=1 ! "video/x-raw(memory:NVMM), width=(int)3264, height=(int)1848, framerate=30/1, format=(string)NV12" ! mux.sink_0 \
+nvarguscamerasrc sensor-id=1 bufapi-version=1 ! "video/x-raw(memory:NVMM), width=(int)3264, height=(int)1848, framerate=30/1, format=(string)NV12" ! mux.sink_1 \
+
+demux.src_0 ! nvvidconv ! nvv4l2h264enc insert-sps-pps=1 ! h264parse ! flvmux ! rtmpsink location=rtmp://media.streamit.live/LiveApp/cam1 \
+demux.src_1 ! nvvidconv ! nvv4l2h264enc insert-sps-pps=1 ! h264parse ! flvmux ! rtmpsink location=rtmp://media.streamit.live/LiveApp/cam2
+'''
+
 def main(args):
 
     # Standard GStreamer initialization
     cameras_list = [
-        { "source": 0, "name": "camera1" },
-        { "source": 1, "name": "camera2" },
+        { "source": 0, "name": "camera1", "rtmp": "rtmp://media.streamit.live/LiveApp/cam1" },
+        { "source": 1, "name": "camera2", "rtmp": "rtmp://media.streamit.live/LiveApp/cam2" },
     ]
     
     GObject.threads_init()
@@ -34,8 +46,8 @@ def main(args):
     muxer = create_element_or_error("nvstreammux", "muxer")
     muxer.set_property('live-source', True)
     muxer.set_property('sync-inputs', True)
-    muxer.set_property('width', 720)
-    muxer.set_property('height', 480)
+    muxer.set_property('width', 1920)
+    muxer.set_property('height', 1080)
     muxer.set_property('batch-size', 3)
     muxer.set_property('batched-push-timeout', 4000000)
     pipeline.add(muxer)
@@ -62,7 +74,7 @@ def main(args):
     tracker.link(analytics)
 
     # Converter
-    converterOsd = create_element_or_error("nvvideoconvert", "to-osd-convertor")
+    converterOsd = create_element_or_error("nvvideoconvert", "to-demuxer-convertor")
     pipeline.add(converterOsd)
     analytics.link(converterOsd)
 
@@ -81,7 +93,7 @@ def main(args):
 
         source.set_property('do-timestamp', True)
         source.set_property('bufapi-version', True)
-        source.set_property('tnr-mode', 2)
+        # source.set_property('tnr-mode', 2)
         source.set_property('ee-mode', 2)
         source.set_property('aeantibanding', 0)
 
@@ -100,12 +112,11 @@ def main(args):
             print("Unable to create source src pad")
             exit(0)
         srcpad.link(sinkpad)
-    
 
     # Outputs
     for camera in cameras_list:
 
-        queue = create_element_or_error("queue", "queue-" + camera['name'])
+        queue = create_element_or_error("queue", "queue-1-" + camera['name'])
         pipeline.add(queue)
 
         _srcpad = demux.get_request_pad("src_" + str(camera['source']))
@@ -120,7 +131,7 @@ def main(args):
 
         _srcpad.link(_sinkpad)
 
-        # Converter
+        # Converter 1
         converter = create_element_or_error("nvvideoconvert", "converter-" + camera['name'])
         pipeline.add(converter)
         queue.link(converter)
@@ -130,16 +141,42 @@ def main(args):
         pipeline.add(nvosd)
         converter.link(nvosd)
 
-        # Transform
-        transform = create_element_or_error("nvegltransform", "nvegl-transform-" + camera['name'])
-        pipeline.add(transform)
-        nvosd.link(transform)
+        # Converter 2
+        convertor2 = create_element_or_error("nvvideoconvert", "converter-2-" + camera['name'])
+        pipeline.add(convertor2)
+        nvosd.link(convertor2)
+
+        # Encoder
+        encoder = create_element_or_error("nvv4l2h264enc", "encoder-" + camera['name'])
+        encoder.set_property('maxperf-enable', True)
+        encoder.set_property('insert-sps-pps', True)
+        encoder.set_property('bitrate', 8000000)
+        pipeline.add(encoder)
+        convertor2.link(encoder)
+
+        # Parser
+        parser = create_element_or_error("h264parse", "parser-" + camera['name'])
+        pipeline.add(parser)
+        encoder.link(parser)
+
+        # Muxer
+        flmuxer = create_element_or_error("flvmux", "flmuxer-" + camera['name'])
+        flmuxer.set_property('streamable', True)
+        pipeline.add(flmuxer)
+        parser.link(flmuxer)
+
+        # Queue
+        queue2 = create_element_or_error("queue", "queue-2-" + camera['name'])
+        pipeline.add(queue2)
+        flmuxer.link(queue2)
 
         # Sink
-        sink = create_element_or_error("nveglglessink", "sink-" + camera['name'])
+        sink = create_element_or_error("rtmpsink", "sink-" + camera['name'])
+        sink.set_property('location', camera['rtmp'])
         sink.set_property('sync', False)
         pipeline.add(sink)
-        transform.link(sink)
+        queue2.link(sink)
+
 
     # create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()
