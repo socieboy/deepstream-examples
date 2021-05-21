@@ -26,7 +26,7 @@ def main():
         sys.stderr.write(" Unable to create Pipeline")
     
     # Create Elements
-    source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    source = create_element_or_error("videotestsrc", "camera-source")
     caps = create_element_or_error("capsfilter", "source-caps")
     caps.set_property("caps", Gst.Caps.from_string("video/x-raw(memory:NVMM), width=(int)1920, height=(int)1080, framerate=30/1, format=(string)NV12"))
     convertor = create_element_or_error('nvvidconv', 'converter')
@@ -36,7 +36,7 @@ def main():
     sink = create_element_or_error("nveglglessink", "egl-overlay")
 
     # Set Element Properties
-    source.set_property('sensor-id', 0)
+    # source.set_property('sensor-id', 0)
     
     # Add Elemements to Pipielin
     print("Adding elements to Pipeline")

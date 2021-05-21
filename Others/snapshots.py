@@ -20,37 +20,41 @@ def main():
     Gst.init(None)
 
     # Create Pipeline Element
-    print("Creating Pipeline")
     pipeline = Gst.Pipeline()
     if not pipeline:
         sys.stderr.write("Unable to create Pipeline")
     
-    print("Creating Elements")
+    # Source
     source = create_element_or_error("nvarguscamerasrc", "camera-source")
+    source.set_property('sensor-id', 1)
+    pipeline.add(source)
+
+    # Convertor
     convertor = create_element_or_error("nvvidconv", "converter-1")
+    pipeline.add(convertor)
+    source.link(convertor)
+
+    # Video Rate
     videorate = create_element_or_error("videorate", "videorate")
+    pipeline.add(videorate)
+    convertor.link(videorate)
+
+    # Video Rate Caps
     videoRateCaps = create_element_or_error("capsfilter", "videorate-caps-source")
     videoRateCaps.set_property("caps", Gst.Caps.from_string("video/x-raw,framerate=1/5"))
-    s_encoder = create_element_or_error("nvjpegenc", "snapshot-encoder")
-    s_sink = create_element_or_error("multifilesink", "snapshot-sink")
-
-    print("Set element properties")
-    source.set_property('sensor-id', 1)
-    s_sink.set_property('location', 'snapshot-%05d.jpg')
-    print("Adding elements to Pipeline")
-    pipeline.add(source)
-    pipeline.add(convertor)
-    pipeline.add(videorate)
     pipeline.add(videoRateCaps)
-    pipeline.add(s_encoder)
-    pipeline.add(s_sink)
-
-    print("Linking elements in the Pipeline")
-    source.link(convertor)
-    convertor.link(videorate)
     videorate.link(videoRateCaps)
-    videoRateCaps.link(s_encoder)
-    s_encoder.link(s_sink)
+
+    # Encoder
+    encoder = create_element_or_error("nvjpegenc", "snapshot-encoder")
+    pipeline.add(encoder)
+    videoRateCaps.link(encoder)
+
+    # File Sink
+    sink = create_element_or_error("multifilesink", "snapshot-sink")
+    sink.set_property('location', 'snapshot-%05d.jpg')
+    pipeline.add(sink)
+    encoder.link(sink)
 
     # Create an event loop and feed gstreamer bus mesages to it
     loop = GObject.MainLoop()
@@ -58,9 +62,7 @@ def main():
     bus.add_signal_watch()
     bus.connect ("message", bus_call, loop)
 
-
     # Start play back and listen to events
-    print("Starting pipeline")
     pipeline.set_state(Gst.State.PLAYING)
 
     try:
