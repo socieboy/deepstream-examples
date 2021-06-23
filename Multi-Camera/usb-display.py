@@ -42,6 +42,8 @@ def main():
         # Source
         source = create_element_or_error("nvv4l2camerasrc", "source-" + camera['name'])
         source.set_property('device', camera["source"])
+        source.set_property('do-timestamp', True)
+        source.set_property('bufapi-version', True)
         pipeline.add(source)
 
         # Caps
@@ -50,7 +52,11 @@ def main():
         pipeline.add(caps)
         source.link(caps)
 
-        srcpad = caps.get_static_pad("src")
+        convertor = create_element_or_error("nvvideoconvert", "converter-1")
+        pipeline.add(convertor)
+        caps.link(convertor)
+
+        srcpad = convertor.get_static_pad("src")
         sinkpad = muxer.get_request_pad('sink_' + str(camera['index']))
 
         if not sinkpad:
@@ -74,7 +80,6 @@ def main():
     pipeline.add(tracker)
     pgie.link(tracker)
 
-
     tiler = create_element_or_error("nvmultistreamtiler", "nvtiler")
     tiler.set_property("rows", 1)
     tiler.set_property("columns", 1)
@@ -83,20 +88,19 @@ def main():
     pipeline.add(tiler)
     tracker.link(tiler)
 
-    convertor = create_element_or_error("nvvideoconvert", "converter-1")
-    pipeline.add(convertor)
-    tiler.link(convertor)
+    convertor2 = create_element_or_error("nvvideoconvert", "converter-2")
+    pipeline.add(convertor2)
+    tiler.link(convertor2)
 
     nvosd = create_element_or_error("nvdsosd", "onscreendisplay")
     pipeline.add(nvosd)
-    convertor.link(nvosd)
+    convertor2.link(nvosd)
 
     transform = create_element_or_error("nvegltransform", "nvegl-transform")
     pipeline.add(transform)
     nvosd.link(transform)
 
     sink = create_element_or_error("nveglglessink", "nvvideo-renderer")
-    sink.set_property("qos", 0)
     pipeline.add(sink)
     transform.link(sink)
 
